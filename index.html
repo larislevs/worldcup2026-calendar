@@ -315,11 +315,99 @@
     .btn-calendar:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-calendar.added    { border-color: #4caf8a; color: #4caf8a; background: rgba(76,175,138,0.08); }
 
+    /* ── MULTI-SELECT CHECKMARK ── */
+    .country-card { position: relative; }
+
+    .country-card .check {
+      position: absolute;
+      top: 6px; right: 6px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid #2a3a55;
+      background: transparent;
+      transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem;
+    }
+
+    .country-card.active .check {
+      border-color: #c8a84b;
+      background: #c8a84b;
+      color: #0a0f1e;
+    }
+
+    /* ── FLOATING BAR ── */
+    .float-bar {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1a2a4a;
+      border: 1px solid #c8a84b;
+      border-radius: 50px;
+      padding: 10px 10px 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+      opacity: 0;
+      z-index: 100;
+      white-space: nowrap;
+    }
+
+    .float-bar.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .float-bar .flags {
+      display: flex;
+      gap: 2px;
+      font-size: 1.2rem;
+    }
+
+    .float-bar .count {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #c8a84b;
+      font-family: 'Barlow', sans-serif;
+    }
+
+    .float-bar .btn-view {
+      background: #c8a84b;
+      border: none;
+      color: #0a0f1e;
+      font-weight: 700;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.85rem;
+      padding: 8px 18px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .float-bar .btn-view:hover { background: #e0bc5a; }
+
+    .float-bar .btn-clear {
+      background: transparent;
+      border: none;
+      color: #8a9bb8;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 50%;
+      transition: color 0.15s;
+    }
+
+    .float-bar .btn-clear:hover { color: #cf6679; }
+
     @media (max-width: 640px) {
       .country-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
       .game-card { grid-template-columns: 80px 1fr; grid-template-rows: auto auto; }
       .game-actions { grid-column: 2; flex-direction: row; }
       .btn-add-all { font-size: 0.75rem; padding: 8px 12px; }
+      .float-bar { width: calc(100% - 32px); justify-content: space-between; }
     }
   </style>
 </head>
@@ -349,6 +437,13 @@
   <div id="gamesPanel"></div>
 </div>
 
+<div class="float-bar" id="floatBar">
+  <div class="flags" id="floatFlags"></div>
+  <span class="count" id="floatCount"></span>
+  <button class="btn-view" id="btnView" onclick="showGames()"></button>
+  <button class="btn-clear" onclick="clearSelection()" title="Limpar">✕</button>
+</div>
+
 <script>
 // ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
 
@@ -373,6 +468,8 @@ const T = {
     errInsert:    "Erro ao adicionar evento. Verifique o console.",
     brt:          "BRT",
     back:         "← Voltar",
+    viewGames:    (n) => `Ver jogos (${n})`,
+    clearSel:     "Limpar seleção",
   },
   es: {
     sub:          "Agrega los partidos a tu Google Calendar",
@@ -394,6 +491,8 @@ const T = {
     errInsert:    "Error al agregar el evento. Revisa la consola.",
     brt:          "BRT",
     back:         "← Volver",
+    viewGames:    (n) => `Ver partidos (${n})`,
+    clearSel:     "Limpiar selección",
   },
   en: {
     sub:          "Add matches to your Google Calendar",
@@ -415,6 +514,8 @@ const T = {
     errInsert:    "Error adding event. Check the console.",
     brt:          "BRT",
     back:         "← Back",
+    viewGames:    (n) => `View matches (${n})`,
+    clearSel:     "Clear selection",
   },
 };
 
@@ -581,8 +682,8 @@ const MATCHES = [
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
-let lang         = "pt";
-let selectedTeam = null; // null = nothing, "__all__" = all matches
+let lang          = "pt";
+let selectedTeams = new Set(); // set of team keys; "__all__" treated separately
 
 // ─── LANGUAGE ─────────────────────────────────────────────────────────────────
 
@@ -597,7 +698,8 @@ function setLang(l) {
   const btnBack = document.getElementById("btnBack");
   if (btnBack.style.display !== "none") btnBack.textContent = t("back");
   rebuildGrid();
-  if (selectedTeam) renderGames();
+  updateFloatBar();
+  if (document.getElementById("gamesPanel").innerHTML) renderGames();
 }
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
@@ -694,60 +796,120 @@ function rebuildGrid() {
 
   // "All matches" card first
   const allCard = document.createElement("div");
-  allCard.className = "country-card all-card" + (selectedTeam === "__all__" ? " active" : "");
+  allCard.className = "country-card all-card";
   allCard.dataset.team = "__all__";
   allCard.innerHTML = `
     <span class="flag">🌍</span>
     <span class="name">${t("allMatches")}</span>
     <span class="group-tag">${t("allMatchesSub")}</span>`;
-  allCard.addEventListener("click", () => selectTeam("__all__"));
+  allCard.addEventListener("click", () => toggleTeam("__all__"));
   grid.appendChild(allCard);
 
   getAllTeams().forEach(team => {
     const group = getTeamGroup(team);
     const card  = document.createElement("div");
-    card.className = "country-card" + (team === selectedTeam ? " active" : "");
+    const isActive = selectedTeams.has(team);
+    card.className = "country-card" + (isActive ? " active" : "");
     card.dataset.team = team;
     card.innerHTML = `
+      <span class="check">${isActive ? "✓" : ""}</span>
       <span class="flag">${FLAGS[team] || "🏳"}</span>
       <span class="name">${tName(team)}</span>
       <span class="group-tag">${t("group")} ${group}</span>`;
-    card.addEventListener("click", () => selectTeam(team));
+    card.addEventListener("click", () => toggleTeam(team));
     grid.appendChild(card);
   });
 }
 
-function selectTeam(team) {
-  selectedTeam = team;
-  document.querySelectorAll(".country-card").forEach(c => {
-    c.classList.toggle("active", c.dataset.team === team);
-  });
-  document.getElementById("gridWrapper").classList.add("hidden");
-  document.getElementById("sectionLabel").style.display = "none";
-  document.getElementById("btnBack").style.display = "";
-  window.scrollTo({ top: 0, behavior: "smooth" });
-  renderGames();
+function toggleTeam(team) {
+  // "Todos os jogos" goes straight to view
+  if (team === "__all__") {
+    selectedTeams.clear();
+    showGames("__all__");
+    return;
+  }
+
+  if (selectedTeams.has(team)) {
+    selectedTeams.delete(team);
+  } else {
+    selectedTeams.add(team);
+  }
+
+  // update card appearance
+  const card = document.querySelector(`[data-team="${team}"]`);
+  if (card) {
+    const isActive = selectedTeams.has(team);
+    card.classList.toggle("active", isActive);
+    card.querySelector(".check").textContent = isActive ? "✓" : "";
+  }
+
+  updateFloatBar();
   gtag("event", "select_team", { team_name: team, language: lang });
 }
 
+function updateFloatBar() {
+  const bar   = document.getElementById("floatBar");
+  const flags = document.getElementById("floatFlags");
+  const count = document.getElementById("floatCount");
+  const btn   = document.getElementById("btnView");
+  const n     = selectedTeams.size;
+
+  if (n === 0) {
+    bar.classList.remove("visible");
+    return;
+  }
+
+  const shownFlags = [...selectedTeams].slice(0, 5).map(t => FLAGS[t] || "🏳").join("");
+  flags.textContent = shownFlags + (n > 5 ? "…" : "");
+  count.textContent = "";
+  btn.textContent   = T[lang].viewGames(n);
+  bar.classList.add("visible");
+}
+
+function clearSelection() {
+  selectedTeams.clear();
+  document.querySelectorAll(".country-card").forEach(c => {
+    c.classList.remove("active");
+    const chk = c.querySelector(".check");
+    if (chk) chk.textContent = "";
+  });
+  updateFloatBar();
+}
+
+function showGames(mode) {
+  // mode = "__all__" or undefined (use selectedTeams)
+  document.getElementById("gridWrapper").classList.add("hidden");
+  document.getElementById("sectionLabel").style.display = "none";
+  document.getElementById("btnBack").style.display = "";
+  document.getElementById("floatBar").classList.remove("visible");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  renderGames(mode);
+}
+
 function goBack() {
-  selectedTeam = null;
   document.getElementById("gridWrapper").classList.remove("hidden");
   document.getElementById("sectionLabel").style.display = "";
   document.getElementById("btnBack").style.display = "none";
   document.getElementById("gamesPanel").innerHTML = "";
-  document.querySelectorAll(".country-card").forEach(c => c.classList.remove("active"));
+  if (selectedTeams.size > 0) updateFloatBar();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function renderGames() {
+function renderGames(mode) {
   const panel = document.getElementById("gamesPanel");
-  if (!selectedTeam) { panel.innerHTML = ""; return; }
 
-  if (selectedTeam === "__all__") {
+  if (mode === "__all__") {
     renderAllGames(panel);
+    return;
+  }
+
+  if (selectedTeams.size === 0) { panel.innerHTML = ""; return; }
+
+  if (selectedTeams.size === 1) {
+    const team = [...selectedTeams][0];
+    renderTeamGames(panel, team);
   } else {
-    renderTeamGames(panel, selectedTeam);
+    renderMultiTeamGames(panel, [...selectedTeams]);
   }
 }
 
@@ -776,6 +938,33 @@ function renderTeamGames(panel, team) {
       </div>
       <div class="games-list">${matches.map(m => gameCardHtml(m, team)).join("")}</div>
     </div>`;
+}
+
+function renderMultiTeamGames(panel, teams) {
+  const allMatches = [...new Set(
+    teams.flatMap(team => getMatchesForTeam(team))
+  )].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+
+  const allIds = allMatches.map(m => m.id);
+  const headerFlags = teams.map(tm => FLAGS[tm] || "🏳").join(" ");
+  const headerNames = teams.map(tName).join(", ");
+
+  let html = `
+    <div class="games-panel">
+      <div class="games-header">
+        <span class="selected-flag" style="font-size:1.2rem">${headerFlags}</span>
+        <span class="selected-name" style="font-size:1rem">${headerNames}</span>
+        ${addAllBtn(allIds, t("addAll"))}
+      </div>
+      <div class="games-list">${allMatches.map(m => {
+        // highlight any selected team
+        const teamInMatch = teams.find(tm => tm === m.home || tm === m.away);
+        return gameCardHtml(m, teamInMatch || null);
+      }).join("")}
+      </div>
+    </div>`;
+
+  panel.innerHTML = html;
 }
 
 function renderAllGames(panel) {
