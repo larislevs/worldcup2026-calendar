@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Copa do Mundo 2026</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #111827;
+      color: #e0e6f0;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, #1a2a4a 0%, #0d1b35 100%);
+      border-bottom: 2px solid #c8a84b;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    header .trophy { font-size: 2.2rem; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #c8a84b; letter-spacing: 1px; }
+    header p  { font-size: 0.8rem; color: #8a9bb8; margin-top: 2px; }
+
+    .lang-switcher {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+      background: #0a0f1e;
+      border: 1px solid #2a3a55;
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: #8a9bb8;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.5px;
+    }
+
+    .lang-btn:hover  { color: #e0e6f0; }
+    .lang-btn.active { background: #1a2a4a; color: #c8a84b; }
+
+    /* ── CONTAINER ── */
+    .container { max-width: 1060px; margin: 0 auto; padding: 32px 16px; }
+
+    .grid-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #8a9bb8;
+    }
+
+    .btn-back {
+      background: transparent;
+      border: 1px solid #2a3a55;
+      color: #8a9bb8;
+      padding: 6px 14px;
+      border-radius: 7px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-back:hover { border-color: #c8a84b; color: #c8a84b; }
+
+    .country-grid-wrapper {
+      overflow: hidden;
+      transition: max-height 0.35s ease, opacity 0.25s ease, margin 0.3s ease;
+      max-height: 2000px;
+      opacity: 1;
+      margin-bottom: 36px;
+    }
+
+    .country-grid-wrapper.hidden {
+      max-height: 0;
+      opacity: 0;
+      margin-bottom: 0;
+    }
+
+    /* ── COUNTRY GRID ── */
+    .country-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+      margin-bottom: 36px;
+    }
+
+    .country-card {
+      background: #1a2336;
+      border: 1px solid #1e2d47;
+      border-radius: 10px;
+      padding: 14px 8px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      user-select: none;
+    }
+
+    .country-card:hover   { border-color: #3a4f72; background: #1e2d47; transform: translateY(-1px); }
+    .country-card.active  { border-color: #c8a84b; background: #1e1c0e; }
+
+    /* all-matches special card */
+    .country-card.all-card {
+      border-color: #2a3a55;
+      background: #131e30;
+    }
+
+    .country-card.all-card:hover { border-color: #c8a84b; background: #1a2336; }
+    .country-card.all-card.active { border-color: #c8a84b; background: #1e1c0e; }
+
+    .country-card .flag       { font-size: 2rem; line-height: 1; }
+    .country-card.all-card .flag { font-size: 1.6rem; }
+
+    .country-card .name {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #c0cfe0;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .country-card.active .name   { color: #c8a84b; font-weight: 600; }
+    .country-card.all-card .name { font-size: 0.7rem; color: #8a9bb8; }
+    .country-card.all-card.active .name { color: #c8a84b; }
+
+    .country-card .group-tag { font-size: 0.62rem; color: #4a5a75; letter-spacing: 0.5px; }
+    .country-card.active .group-tag { color: #8a7a3a; }
+
+    /* ── GAMES PANEL ── */
+    .games-panel { animation: fadeIn 0.2s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .games-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .games-header .selected-flag { font-size: 1.8rem; }
+    .games-header .selected-name { font-size: 1.1rem; font-weight: 700; color: #e0e6f0; }
+
+    .games-header .selected-group {
+      font-size: 0.75rem;
+      background: #1a2a4a;
+      border: 1px solid #2a3a55;
+      color: #c8a84b;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 5px;
+    }
+
+    /* add-all button */
+    .btn-add-all {
+      margin-left: auto;
+      background: #4285f4;
+      border: none;
+      color: #fff;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: background 0.2s, opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-add-all:hover    { background: #3367d6; }
+    .btn-add-all:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-add-all.done     { background: #2a7a5a; }
+
+    /* group separator for all-matches view */
+    .group-separator {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #8a9bb8;
+      padding: 20px 0 8px;
+      border-bottom: 1px solid #1e2d47;
+      margin-bottom: 10px;
+    }
+
+    .group-separator:first-child { padding-top: 0; }
+
+    .games-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .game-card {
+      background: #1a2336;
+      border: 1px solid #1e2d47;
+      border-left: 3px solid #c8a84b;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: 100px 1fr auto;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .game-card.finished { opacity: 0.75; }
+
+    .game-date { text-align: center; }
+    .game-date .day   { font-size: 1.5rem; font-weight: 700; color: #c8a84b; line-height: 1; }
+    .game-date .month { font-size: 0.68rem; text-transform: uppercase; color: #8a9bb8; letter-spacing: 1px; }
+    .game-date .time  { font-size: 0.72rem; color: #6b7d99; margin-top: 4px; }
+
+    .game-matchup {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e0e6f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .game-matchup .flag-sm { font-size: 1.1rem; }
+    .game-matchup .vs      { font-size: 0.65rem; color: #4a5a75; font-weight: 400; }
+    .selected-team         { color: #c8a84b !important; }
+
+    .game-meta   { font-size: 0.72rem; color: #6b7d99; margin-top: 5px; }
+    .game-result { font-size: 0.8rem; margin-top: 5px; display: flex; align-items: center; gap: 6px; }
+    .result-score { font-weight: 700; font-size: 1.1rem; color: #e0e6f0; }
+
+    .result-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .result-badge.win      { background: #1a3a2a; color: #4caf8a; }
+    .result-badge.loss     { background: #3a1a1a; color: #cf6679; }
+    .result-badge.draw     { background: #2a2a1a; color: #c8a84b; }
+    .result-badge.upcoming { background: #1a2a4a; color: #8a9bb8; }
+
+    .game-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+
+    .btn-calendar {
+      background: transparent;
+      border: 1px solid #2a3a55;
+      color: #8a9bb8;
+      padding: 7px 13px;
+      border-radius: 7px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .btn-calendar:hover:not(:disabled) { border-color: #4285f4; color: #4285f4; background: rgba(66,133,244,0.08); }
+    .btn-calendar:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-calendar.added    { border-color: #4caf8a; color: #4caf8a; background: rgba(76,175,138,0.08); }
+
+    @media (max-width: 640px) {
+      .country-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+      .game-card { grid-template-columns: 80px 1fr; grid-template-rows: auto auto; }
+      .game-actions { grid-column: 2; flex-direction: row; }
+      .btn-add-all { font-size: 0.75rem; padding: 8px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="trophy">🏆</div>
+  <div>
+    <h1>FIFA World Cup 2026</h1>
+    <p id="headerSub">Jogos · Resultados · Google Calendar</p>
+  </div>
+  <div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('pt')">PT</button>
+    <button class="lang-btn"        onclick="setLang('es')">ES</button>
+    <button class="lang-btn"        onclick="setLang('en')">EN</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="grid-header">
+    <div class="section-label" id="sectionLabel">Escolha uma seleção</div>
+    <button class="btn-back" id="btnBack" style="display:none" onclick="goBack()">← Voltar</button>
+  </div>
+  <div class="country-grid-wrapper" id="gridWrapper">
+    <div class="country-grid" id="countryGrid"></div>
+  </div>
+  <div id="gamesPanel"></div>
+</div>
+
+<script>
+// ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
+
+const T = {
+  pt: {
+    sub:          "Adicione os jogos ao seu Google Calendar",
+    pickTeam:     "Escolha uma seleção",
+    allMatches:   "Todos os jogos",
+    allMatchesSub:"72 jogos",
+    group:        "Grupo",
+    upcoming:     "Em breve",
+    win:          "Vitória",
+    loss:         "Derrota",
+    draw:         "Empate",
+    add:          "📅 Adicionar",
+    adding:       "Adicionando…",
+    added:        "✓ Adicionado",
+    addAll:       "📅 Adicionar todos ao Google Calendar",
+    addingAll:    "Adicionando…",
+    addedAll:     "✓ Todos adicionados",
+    errLoading:   "API ainda carregando, tente novamente.",
+    errInsert:    "Erro ao adicionar evento. Verifique o console.",
+    brt:          "BRT",
+    back:         "← Voltar",
+  },
+  es: {
+    sub:          "Agrega los partidos a tu Google Calendar",
+    pickTeam:     "Elige una selección",
+    allMatches:   "Todos los partidos",
+    allMatchesSub:"72 partidos",
+    group:        "Grupo",
+    upcoming:     "Próximo",
+    win:          "Victoria",
+    loss:         "Derrota",
+    draw:         "Empate",
+    add:          "📅 Agregar",
+    adding:       "Agregando…",
+    added:        "✓ Agregado",
+    addAll:       "📅 Agregar todos a Google Calendar",
+    addingAll:    "Agregando…",
+    addedAll:     "✓ Todos agregados",
+    errLoading:   "API aún cargando, inténtalo de nuevo.",
+    errInsert:    "Error al agregar el evento. Revisa la consola.",
+    brt:          "BRT",
+    back:         "← Volver",
+  },
+  en: {
+    sub:          "Add matches to your Google Calendar",
+    pickTeam:     "Choose a team",
+    allMatches:   "All matches",
+    allMatchesSub:"72 matches",
+    group:        "Group",
+    upcoming:     "Upcoming",
+    win:          "Win",
+    loss:         "Loss",
+    draw:         "Draw",
+    add:          "📅 Add",
+    adding:       "Adding…",
+    added:        "✓ Added",
+    addAll:       "📅 Add all to Google Calendar",
+    addingAll:    "Adding…",
+    addedAll:     "✓ All added",
+    errLoading:   "API still loading, please try again.",
+    errInsert:    "Error adding event. Check the console.",
+    brt:          "BRT",
+    back:         "← Back",
+  },
+};
+
+const COUNTRY_NAMES = {
+  "África do Sul":      { pt: "África do Sul",     es: "Sudáfrica",         en: "South Africa"        },
+  "Alemanha":           { pt: "Alemanha",           es: "Alemania",          en: "Germany"             },
+  "Arábia Saudita":     { pt: "Arábia Saudita",    es: "Arabia Saudita",    en: "Saudi Arabia"        },
+  "Argélia":            { pt: "Argélia",            es: "Argelia",           en: "Algeria"             },
+  "Argentina":          { pt: "Argentina",          es: "Argentina",         en: "Argentina"           },
+  "Austrália":          { pt: "Austrália",          es: "Australia",         en: "Australia"           },
+  "Bélgica":            { pt: "Bélgica",            es: "Bélgica",           en: "Belgium"             },
+  "Bolívia":            { pt: "Bolívia",            es: "Bolivia",           en: "Bolivia"             },
+  "Brasil":             { pt: "Brasil",             es: "Brasil",            en: "Brazil"              },
+  "Canadá":             { pt: "Canadá",             es: "Canadá",            en: "Canada"              },
+  "Cazaquistão":        { pt: "Cazaquistão",        es: "Kazajistán",        en: "Kazakhstan"          },
+  "Chile":              { pt: "Chile",              es: "Chile",             en: "Chile"               },
+  "Colômbia":           { pt: "Colômbia",           es: "Colombia",          en: "Colombia"            },
+  "Coreia do Sul":      { pt: "Coreia do Sul",      es: "Corea del Sur",     en: "South Korea"         },
+  "Costa Rica":         { pt: "Costa Rica",         es: "Costa Rica",        en: "Costa Rica"          },
+  "Croácia":            { pt: "Croácia",            es: "Croacia",           en: "Croatia"             },
+  "Egito":              { pt: "Egito",              es: "Egipto",            en: "Egypt"               },
+  "El Salvador":        { pt: "El Salvador",        es: "El Salvador",       en: "El Salvador"         },
+  "Equador":            { pt: "Equador",            es: "Ecuador",           en: "Ecuador"             },
+  "Escócia":            { pt: "Escócia",            es: "Escocia",           en: "Scotland"            },
+  "Eslovênia":          { pt: "Eslovênia",          es: "Eslovenia",         en: "Slovenia"            },
+  "Espanha":            { pt: "Espanha",            es: "España",            en: "Spain"               },
+  "Estados Unidos":     { pt: "Estados Unidos",     es: "Estados Unidos",    en: "United States"       },
+  "França":             { pt: "França",             es: "Francia",           en: "France"              },
+  "Gana":               { pt: "Gana",               es: "Ghana",             en: "Ghana"               },
+  "Inglaterra":         { pt: "Inglaterra",         es: "Inglaterra",        en: "England"             },
+  "Irã":                { pt: "Irã",                es: "Irán",              en: "Iran"                },
+  "Itália":             { pt: "Itália",             es: "Italia",            en: "Italy"               },
+  "Jamaica":            { pt: "Jamaica",            es: "Jamaica",           en: "Jamaica"             },
+  "Japão":              { pt: "Japão",              es: "Japón",             en: "Japan"               },
+  "Mali":               { pt: "Mali",               es: "Malí",              en: "Mali"                },
+  "Marrocos":           { pt: "Marrocos",           es: "Marruecos",         en: "Morocco"             },
+  "México":             { pt: "México",             es: "México",            en: "Mexico"              },
+  "Nova Zelândia":      { pt: "Nova Zelândia",      es: "Nueva Zelanda",     en: "New Zealand"         },
+  "Países Baixos":      { pt: "Países Baixos",      es: "Países Bajos",      en: "Netherlands"         },
+  "Panamá":             { pt: "Panamá",             es: "Panamá",            en: "Panama"              },
+  "Peru":               { pt: "Peru",               es: "Perú",              en: "Peru"                },
+  "Polônia":            { pt: "Polônia",            es: "Polonia",           en: "Poland"              },
+  "Portugal":           { pt: "Portugal",           es: "Portugal",          en: "Portugal"            },
+  "Quirguistão":        { pt: "Quirguistão",        es: "Kirguistán",        en: "Kyrgyzstan"          },
+  "Rep. Tcheca":        { pt: "Rep. Tcheca",        es: "Rep. Checa",        en: "Czech Republic"      },
+  "Senegal":            { pt: "Senegal",            es: "Senegal",           en: "Senegal"             },
+  "Sérvia":             { pt: "Sérvia",             es: "Serbia",            en: "Serbia"              },
+  "Trinidade e Tobago": { pt: "Trinidade e Tobago", es: "Trinidad y Tobago", en: "Trinidad and Tobago" },
+  "Turquia":            { pt: "Turquia",            es: "Turquía",           en: "Turkey"              },
+  "Ucrânia":            { pt: "Ucrânia",            es: "Ucrania",           en: "Ukraine"             },
+  "Uruguai":            { pt: "Uruguai",            es: "Uruguay",           en: "Uruguay"             },
+  "Venezuela":          { pt: "Venezuela",          es: "Venezuela",         en: "Venezuela"           },
+};
+
+function tName(key) { return (COUNTRY_NAMES[key] || {})[lang] || key; }
+function t(key)     { return T[lang][key] || key; }
+
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+
+const FLAGS = {
+  "México": "🇲🇽", "Jamaica": "🇯🇲", "Venezuela": "🇻🇪", "Nova Zelândia": "🇳🇿",
+  "Argentina": "🇦🇷", "Chile": "🇨🇱", "Peru": "🇵🇪", "Equador": "🇪🇨",
+  "Estados Unidos": "🇺🇸", "Panamá": "🇵🇦", "Uruguai": "🇺🇾", "Bolívia": "🇧🇴",
+  "Espanha": "🇪🇸", "Marrocos": "🇲🇦", "Austrália": "🇦🇺", "Ucrânia": "🇺🇦",
+  "França": "🇫🇷", "Bélgica": "🇧🇪", "Eslovênia": "🇸🇮", "Arábia Saudita": "🇸🇦",
+  "Alemanha": "🇩🇪", "Portugal": "🇵🇹", "Escócia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Cazaquistão": "🇰🇿",
+  "Brasil": "🇧🇷", "Japão": "🇯🇵", "Colômbia": "🇨🇴", "Senegal": "🇸🇳",
+  "Inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Sérvia": "🇷🇸", "Argélia": "🇩🇿", "Mali": "🇲🇱",
+  "Países Baixos": "🇳🇱", "África do Sul": "🇿🇦", "Coreia do Sul": "🇰🇷", "Quirguistão": "🇰🇬",
+  "Itália": "🇮🇹", "Croácia": "🇭🇷", "Egito": "🇪🇬", "Trinidade e Tobago": "🇹🇹",
+  "Turquia": "🇹🇷", "Rep. Tcheca": "🇨🇿", "Canadá": "🇨🇦", "Costa Rica": "🇨🇷",
+  "Irã": "🇮🇷", "Gana": "🇬🇭", "Polônia": "🇵🇱", "El Salvador": "🇸🇻",
+};
+
+const GROUPS = {
+  A: ["México", "Jamaica", "Venezuela", "Nova Zelândia"],
+  B: ["Argentina", "Chile", "Peru", "Equador"],
+  C: ["Estados Unidos", "Panamá", "Uruguai", "Bolívia"],
+  D: ["Espanha", "Marrocos", "Austrália", "Ucrânia"],
+  E: ["França", "Bélgica", "Eslovênia", "Arábia Saudita"],
+  F: ["Alemanha", "Portugal", "Escócia", "Cazaquistão"],
+  G: ["Brasil", "Japão", "Colômbia", "Senegal"],
+  H: ["Inglaterra", "Sérvia", "Argélia", "Mali"],
+  I: ["Países Baixos", "África do Sul", "Coreia do Sul", "Quirguistão"],
+  J: ["Itália", "Croácia", "Egito", "Trinidade e Tobago"],
+  K: ["Turquia", "Rep. Tcheca", "Canadá", "Costa Rica"],
+  L: ["Irã", "Gana", "Polônia", "El Salvador"],
+};
+
+const MATCHES = [
+  { id: 1,  group: "A", date: "2026-06-12", time: "17:00", home: "México",        away: "Jamaica",            venue: "SoFi Stadium, Los Angeles",          result: null },
+  { id: 2,  group: "A", date: "2026-06-12", time: "20:00", home: "Venezuela",     away: "Nova Zelândia",      venue: "Rose Bowl, Pasadena",                result: null },
+  { id: 3,  group: "A", date: "2026-06-16", time: "17:00", home: "México",        away: "Venezuela",          venue: "AT&T Stadium, Dallas",               result: null },
+  { id: 4,  group: "A", date: "2026-06-16", time: "20:00", home: "Jamaica",       away: "Nova Zelândia",      venue: "Levi's Stadium, San Jose",           result: null },
+  { id: 5,  group: "A", date: "2026-06-20", time: "17:00", home: "Nova Zelândia", away: "México",             venue: "Arrowhead Stadium, Kansas City",      result: null },
+  { id: 6,  group: "A", date: "2026-06-20", time: "17:00", home: "Jamaica",       away: "Venezuela",          venue: "Estadio Akron, Guadalajara",          result: null },
+  { id: 7,  group: "B", date: "2026-06-13", time: "14:00", home: "Argentina",     away: "Chile",              venue: "MetLife Stadium, Nova York",          result: null },
+  { id: 8,  group: "B", date: "2026-06-13", time: "20:00", home: "Peru",          away: "Equador",            venue: "Hard Rock Stadium, Miami",            result: null },
+  { id: 9,  group: "B", date: "2026-06-17", time: "17:00", home: "Argentina",     away: "Peru",               venue: "NRG Stadium, Houston",               result: null },
+  { id: 10, group: "B", date: "2026-06-17", time: "20:00", home: "Chile",         away: "Equador",            venue: "Camping World Stadium, Orlando",      result: null },
+  { id: 11, group: "B", date: "2026-06-21", time: "17:00", home: "Equador",       away: "Argentina",          venue: "Gillette Stadium, Boston",            result: null },
+  { id: 12, group: "B", date: "2026-06-21", time: "17:00", home: "Chile",         away: "Peru",               venue: "Lincoln Financial Field, Filadélfia", result: null },
+  { id: 13, group: "C", date: "2026-06-11", time: "21:00", home: "Estados Unidos",away: "Panamá",             venue: "SoFi Stadium, Los Angeles",          result: null },
+  { id: 14, group: "C", date: "2026-06-12", time: "14:00", home: "Uruguai",       away: "Bolívia",            venue: "AT&T Stadium, Dallas",               result: null },
+  { id: 15, group: "C", date: "2026-06-15", time: "17:00", home: "Estados Unidos",away: "Uruguai",            venue: "MetLife Stadium, Nova York",          result: null },
+  { id: 16, group: "C", date: "2026-06-15", time: "20:00", home: "Panamá",        away: "Bolívia",            venue: "Arrowhead Stadium, Kansas City",      result: null },
+  { id: 17, group: "C", date: "2026-06-19", time: "17:00", home: "Bolívia",       away: "Estados Unidos",     venue: "NRG Stadium, Houston",               result: null },
+  { id: 18, group: "C", date: "2026-06-19", time: "17:00", home: "Panamá",        away: "Uruguai",            venue: "Levi's Stadium, San Jose",           result: null },
+  { id: 19, group: "D", date: "2026-06-13", time: "17:00", home: "Espanha",       away: "Marrocos",           venue: "MetLife Stadium, Nova York",          result: null },
+  { id: 20, group: "D", date: "2026-06-13", time: "14:00", home: "Austrália",     away: "Ucrânia",            venue: "Camping World Stadium, Orlando",      result: null },
+  { id: 21, group: "D", date: "2026-06-17", time: "14:00", home: "Espanha",       away: "Austrália",          venue: "Hard Rock Stadium, Miami",            result: null },
+  { id: 22, group: "D", date: "2026-06-17", time: "14:00", home: "Marrocos",      away: "Ucrânia",            venue: "Gillette Stadium, Boston",            result: null },
+  { id: 23, group: "D", date: "2026-06-21", time: "20:00", home: "Ucrânia",       away: "Espanha",            venue: "Lincoln Financial Field, Filadélfia", result: null },
+  { id: 24, group: "D", date: "2026-06-21", time: "20:00", home: "Austrália",     away: "Marrocos",           venue: "SoFi Stadium, Los Angeles",          result: null },
+  { id: 25, group: "E", date: "2026-06-14", time: "14:00", home: "França",        away: "Bélgica",            venue: "MetLife Stadium, Nova York",          result: null },
+  { id: 26, group: "E", date: "2026-06-14", time: "20:00", home: "Eslovênia",     away: "Arábia Saudita",     venue: "AT&T Stadium, Dallas",               result: null },
+  { id: 27, group: "E", date: "2026-06-18", time: "17:00", home: "França",        away: "Eslovênia",          venue: "NRG Stadium, Houston",               result: null },
+  { id: 28, group: "E", date: "2026-06-18", time: "20:00", home: "Bélgica",       away: "Arábia Saudita",     venue: "Rose Bowl, Pasadena",                result: null },
+  { id: 29, group: "E", date: "2026-06-22", time: "17:00", home: "Arábia Saudita",away: "França",             venue: "Camping World Stadium, Orlando",      result: null },
+  { id: 30, group: "E", date: "2026-06-22", time: "17:00", home: "Eslovênia",     away: "Bélgica",            venue: "Levi's Stadium, San Jose",           result: null },
+  { id: 31, group: "F", date: "2026-06-14", time: "17:00", home: "Alemanha",      away: "Portugal",           venue: "Gillette Stadium, Boston",            result: null },
+  { id: 32, group: "F", date: "2026-06-14", time: "14:00", home: "Escócia",       away: "Cazaquistão",        venue: "Arrowhead Stadium, Kansas City",      result: null },
+  { id: 33, group: "F", date: "2026-06-18", time: "14:00", home: "Alemanha",      away: "Escócia",            venue: "Hard Rock Stadium, Miami",            result: null },
+  { id: 34, group: "F", date: "2026-06-18", time: "17:00", home: "Portugal",      away: "Cazaquistão",        venue: "Lincoln Financial Field, Filadélfia", result: null },
+  { id: 35, group: "F", date: "2026-06-22", time: "20:00", home: "Cazaquistão",   away: "Alemanha",           venue: "AT&T Stadium, Dallas",               result: null },
+  { id: 36, group: "F", date: "2026-06-22", time: "20:00", home: "Escócia",       away: "Portugal",           venue: "MetLife Stadium, Nova York",          result: null },
+  { id: 37, group: "G", date: "2026-06-15", time: "14:00", home: "Brasil",        away: "Japão",              venue: "SoFi Stadium, Los Angeles",          result: null },
+  { id: 38, group: "G", date: "2026-06-15", time: "17:00", home: "Colômbia",      away: "Senegal",            venue: "Rose Bowl, Pasadena",                result: null },
+  { id: 39, group: "G", date: "2026-06-19", time: "14:00", home: "Brasil",        away: "Colômbia",           venue: "AT&T Stadium, Dallas",               result: null },
+  { id: 40, group: "G", date: "2026-06-19", time: "20:00", home: "Japão",         away: "Senegal",            venue: "NRG Stadium, Houston",               result: null },
+  { id: 41, group: "G", date: "2026-06-23", time: "20:00", home: "Senegal",       away: "Brasil",             venue: "Hard Rock Stadium, Miami",            result: null },
+  { id: 42, group: "G", date: "2026-06-23", time: "20:00", home: "Japão",         away: "Colômbia",           venue: "Levi's Stadium, San Jose",           result: null },
+  { id: 43, group: "H", date: "2026-06-15", time: "20:00", home: "Inglaterra",    away: "Sérvia",             venue: "MetLife Stadium, Nova York",          result: null },
+  { id: 44, group: "H", date: "2026-06-16", time: "14:00", home: "Argélia",       away: "Mali",               venue: "Gillette Stadium, Boston",            result: null },
+  { id: 45, group: "H", date: "2026-06-19", time: "17:00", home: "Inglaterra",    away: "Argélia",            venue: "Arrowhead Stadium, Kansas City",      result: null },
+  { id: 46, group: "H", date: "2026-06-20", time: "14:00", home: "Sérvia",        away: "Mali",               venue: "Camping World Stadium, Orlando",      result: null },
+  { id: 47, group: "H", date: "2026-06-23", time: "17:00", home: "Mali",          away: "Inglaterra",         venue: "Rose Bowl, Pasadena",                result: null },
+  { id: 48, group: "H", date: "2026-06-23", time: "17:00", home: "Sérvia",        away: "Argélia",            venue: "Lincoln Financial Field, Filadélfia", result: null },
+  { id: 49, group: "I", date: "2026-06-16", time: "17:00", home: "Países Baixos", away: "África do Sul",      venue: "AT&T Stadium, Dallas",               result: null },
+  { id: 50, group: "I", date: "2026-06-16", time: "14:00", home: "Coreia do Sul", away: "Quirguistão",        venue: "NRG Stadium, Houston",               result: null },
+  { id: 51, group: "I", date: "2026-06-20", time: "14:00", home: "Países Baixos", away: "Coreia do Sul",      venue: "Camping World Stadium, Orlando",      result: null },
+  { id: 52, group: "I", date: "2026-06-20", time: "20:00", home: "África do Sul", away: "Quirguistão",        venue: "Levi's Stadium, San Jose",           result: null },
+  { id: 53, group: "I", date: "2026-06-24", time: "17:00", home: "Quirguistão",   away: "Países Baixos",      venue: "MetLife Stadium, Nova York",          result: null },
+  { id: 54, group: "I", date: "2026-06-24", time: "17:00", home: "África do Sul", away: "Coreia do Sul",      venue: "SoFi Stadium, Los Angeles",          result: null },
+  { id: 55, group: "J", date: "2026-06-16", time: "20:00", home: "Itália",        away: "Croácia",            venue: "Hard Rock Stadium, Miami",            result: null },
+  { id: 56, group: "J", date: "2026-06-17", time: "14:00", home: "Egito",         away: "Trinidade e Tobago", venue: "Rose Bowl, Pasadena",                result: null },
+  { id: 57, group: "J", date: "2026-06-20", time: "17:00", home: "Itália",        away: "Egito",              venue: "Arrowhead Stadium, Kansas City",      result: null },
+  { id: 58, group: "J", date: "2026-06-21", time: "14:00", home: "Croácia",       away: "Trinidade e Tobago", venue: "Gillette Stadium, Boston",            result: null },
+  { id: 59, group: "J", date: "2026-06-24", time: "20:00", home: "Trinidade e Tobago", away: "Itália",        venue: "AT&T Stadium, Dallas",               result: null },
+  { id: 60, group: "J", date: "2026-06-24", time: "20:00", home: "Croácia",       away: "Egito",              venue: "NRG Stadium, Houston",               result: null },
+  { id: 61, group: "K", date: "2026-06-17", time: "17:00", home: "Turquia",       away: "Rep. Tcheca",        venue: "Lincoln Financial Field, Filadélfia", result: null },
+  { id: 62, group: "K", date: "2026-06-17", time: "20:00", home: "Canadá",        away: "Costa Rica",         venue: "BMO Field, Toronto",                 result: null },
+  { id: 63, group: "K", date: "2026-06-21", time: "14:00", home: "Turquia",       away: "Canadá",             venue: "BC Place, Vancouver",                result: null },
+  { id: 64, group: "K", date: "2026-06-21", time: "20:00", home: "Rep. Tcheca",   away: "Costa Rica",         venue: "Stade Olympique, Montreal",          result: null },
+  { id: 65, group: "K", date: "2026-06-25", time: "20:00", home: "Costa Rica",    away: "Turquia",            venue: "MetLife Stadium, Nova York",          result: null },
+  { id: 66, group: "K", date: "2026-06-25", time: "20:00", home: "Canadá",        away: "Rep. Tcheca",        venue: "SoFi Stadium, Los Angeles",          result: null },
+  { id: 67, group: "L", date: "2026-06-18", time: "14:00", home: "Irã",           away: "Polônia",            venue: "Camping World Stadium, Orlando",      result: null },
+  { id: 68, group: "L", date: "2026-06-18", time: "20:00", home: "El Salvador",   away: "Gana",               venue: "Rose Bowl, Pasadena",                result: null },
+  { id: 69, group: "L", date: "2026-06-22", time: "14:00", home: "Irã",           away: "El Salvador",        venue: "AT&T Stadium, Dallas",               result: null },
+  { id: 70, group: "L", date: "2026-06-22", time: "14:00", home: "Polônia",       away: "Gana",               venue: "Hard Rock Stadium, Miami",            result: null },
+  { id: 71, group: "L", date: "2026-06-26", time: "20:00", home: "Gana",          away: "Irã",                venue: "NRG Stadium, Houston",               result: null },
+  { id: 72, group: "L", date: "2026-06-26", time: "20:00", home: "Polônia",       away: "El Salvador",        venue: "Gillette Stadium, Boston",            result: null },
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+
+let lang         = "pt";
+let selectedTeam = null; // null = nothing, "__all__" = all matches
+
+// ─── LANGUAGE ─────────────────────────────────────────────────────────────────
+
+function setLang(l) {
+  lang = l;
+  document.documentElement.lang = l === "pt" ? "pt-BR" : l;
+  document.querySelectorAll(".lang-btn").forEach(b => {
+    b.classList.toggle("active", b.textContent === l.toUpperCase());
+  });
+  document.getElementById("headerSub").textContent    = t("sub");
+  document.getElementById("sectionLabel").textContent = t("pickTeam");
+  const btnBack = document.getElementById("btnBack");
+  if (btnBack.style.display !== "none") btnBack.textContent = t("back");
+  rebuildGrid();
+  if (selectedTeam) renderGames();
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+
+function getTeamGroup(team) {
+  for (const [g, teams] of Object.entries(GROUPS)) {
+    if (teams.includes(team)) return g;
+  }
+  return null;
+}
+
+function getAllTeams() {
+  return Object.values(GROUPS).flat().sort((a, b) =>
+    tName(a).localeCompare(tName(b), lang)
+  );
+}
+
+function getMatchesForTeam(team) {
+  return MATCHES.filter(m => m.home === team || m.away === team);
+}
+
+function formatDateLabel(dateStr) {
+  const [, mo, d] = dateStr.split("-").map(Number);
+  const months = {
+    pt: ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"],
+    es: ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"],
+    en: ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"],
+  };
+  return { day: String(d).padStart(2, "0"), month: months[lang][mo - 1] };
+}
+
+function getResultBadge(match, team) {
+  if (!match.result) return `<span class="result-badge upcoming">${t("upcoming")}</span>`;
+  const isHome     = !team || match.home === team;
+  const myGoals    = isHome ? match.result.h : match.result.a;
+  const theirGoals = isHome ? match.result.a : match.result.h;
+  if (!team) return "";
+  if (myGoals > theirGoals) return `<span class="result-badge win">${t("win")}</span>`;
+  if (myGoals < theirGoals) return `<span class="result-badge loss">${t("loss")}</span>`;
+  return `<span class="result-badge draw">${t("draw")}</span>`;
+}
+
+function matchToISOInterval(match) {
+  const [y, mo, d] = match.date.split("-").map(Number);
+  const [h, min]   = match.time.split(":").map(Number);
+  const start = new Date(Date.UTC(y, mo - 1, d, h + 3, min));
+  const end   = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
+function gameCardHtml(m, team) {
+  const { day, month } = formatDateLabel(m.date);
+  const finished  = !!m.result;
+  const homeClass = team && m.home === team ? "selected-team" : "";
+  const awayClass = team && m.away === team ? "selected-team" : "";
+  const scoreHtml = finished ? `<span class="result-score">${m.result.h} – ${m.result.a}</span>` : "";
+  const badgeHtml = getResultBadge(m, team);
+  const isAdded   = addedSet.has(m.id);
+
+  return `
+    <div class="game-card ${finished ? "finished" : ""}">
+      <div class="game-date">
+        <div class="day">${day}</div>
+        <div class="month">${month}</div>
+        <div class="time">${m.time} ${t("brt")}</div>
+      </div>
+      <div class="game-info">
+        <div class="game-matchup">
+          <span class="flag-sm">${FLAGS[m.home] || ""}</span>
+          <span class="${homeClass}">${tName(m.home)}</span>
+          <span class="vs">×</span>
+          <span class="flag-sm">${FLAGS[m.away] || ""}</span>
+          <span class="${awayClass}">${tName(m.away)}</span>
+        </div>
+        <div class="game-meta">${t("group")} ${m.group} · ${m.venue}</div>
+        <div class="game-result">${scoreHtml}${badgeHtml}</div>
+      </div>
+      <div class="game-actions">
+        <button
+          class="btn-calendar ${isAdded ? "added" : ""}"
+          data-match-id="${m.id}"
+          onclick="addToCalendar(${m.id})"
+          ${isAdded ? "disabled" : ""}
+        >${isAdded ? t("added") : t("add")}</button>
+      </div>
+    </div>`;
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+
+function rebuildGrid() {
+  const grid = document.getElementById("countryGrid");
+  grid.innerHTML = "";
+
+  // "All matches" card first
+  const allCard = document.createElement("div");
+  allCard.className = "country-card all-card" + (selectedTeam === "__all__" ? " active" : "");
+  allCard.dataset.team = "__all__";
+  allCard.innerHTML = `
+    <span class="flag">🌍</span>
+    <span class="name">${t("allMatches")}</span>
+    <span class="group-tag">${t("allMatchesSub")}</span>`;
+  allCard.addEventListener("click", () => selectTeam("__all__"));
+  grid.appendChild(allCard);
+
+  getAllTeams().forEach(team => {
+    const group = getTeamGroup(team);
+    const card  = document.createElement("div");
+    card.className = "country-card" + (team === selectedTeam ? " active" : "");
+    card.dataset.team = team;
+    card.innerHTML = `
+      <span class="flag">${FLAGS[team] || "🏳"}</span>
+      <span class="name">${tName(team)}</span>
+      <span class="group-tag">${t("group")} ${group}</span>`;
+    card.addEventListener("click", () => selectTeam(team));
+    grid.appendChild(card);
+  });
+}
+
+function selectTeam(team) {
+  selectedTeam = team;
+  document.querySelectorAll(".country-card").forEach(c => {
+    c.classList.toggle("active", c.dataset.team === team);
+  });
+  document.getElementById("gridWrapper").classList.add("hidden");
+  document.getElementById("sectionLabel").style.display = "none";
+  document.getElementById("btnBack").style.display = "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  renderGames();
+}
+
+function goBack() {
+  selectedTeam = null;
+  document.getElementById("gridWrapper").classList.remove("hidden");
+  document.getElementById("sectionLabel").style.display = "";
+  document.getElementById("btnBack").style.display = "none";
+  document.getElementById("gamesPanel").innerHTML = "";
+  document.querySelectorAll(".country-card").forEach(c => c.classList.remove("active"));
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderGames() {
+  const panel = document.getElementById("gamesPanel");
+  if (!selectedTeam) { panel.innerHTML = ""; return; }
+
+  if (selectedTeam === "__all__") {
+    renderAllGames(panel);
+  } else {
+    renderTeamGames(panel, selectedTeam);
+  }
+}
+
+function addAllBtn(matchIds, label) {
+  const allAdded = matchIds.every(id => addedSet.has(id));
+  return `<button
+    class="btn-add-all ${allAdded ? "done" : ""}"
+    id="btnAddAll"
+    onclick="addAllToCalendar(${JSON.stringify(matchIds)})"
+    ${allAdded ? "disabled" : ""}
+  >${allAdded ? t("addedAll") : label}</button>`;
+}
+
+function renderTeamGames(panel, team) {
+  const group   = getTeamGroup(team);
+  const matches = getMatchesForTeam(team);
+  const ids     = matches.map(m => m.id);
+
+  panel.innerHTML = `
+    <div class="games-panel">
+      <div class="games-header">
+        <span class="selected-flag">${FLAGS[team] || "🏳"}</span>
+        <span class="selected-name">${tName(team)}</span>
+        <span class="selected-group">${t("group")} ${group}</span>
+        ${addAllBtn(ids, t("addAll"))}
+      </div>
+      <div class="games-list">${matches.map(m => gameCardHtml(m, team)).join("")}</div>
+    </div>`;
+}
+
+function renderAllGames(panel) {
+  const allIds = MATCHES.map(m => m.id);
+  let html = `
+    <div class="games-panel">
+      <div class="games-header">
+        <span class="selected-flag">🌍</span>
+        <span class="selected-name">${t("allMatches")}</span>
+        ${addAllBtn(allIds, t("addAll"))}
+      </div>`;
+
+  for (const [grp, teams] of Object.entries(GROUPS)) {
+    const matches = MATCHES.filter(m => m.group === grp);
+    html += `<div class="group-separator">${t("group")} ${grp} · ${teams.map(tName).join(" · ")}</div>`;
+    html += `<div class="games-list">${matches.map(m => gameCardHtml(m, null)).join("")}</div>`;
+  }
+
+  html += `</div>`;
+  panel.innerHTML = html;
+}
+
+// ─── GOOGLE AUTH & CALENDAR API ───────────────────────────────────────────────
+
+const CLIENT_ID = "752615313785-139j9ebqkf34r1mpdvi49dosuorrpe6s.apps.googleusercontent.com";
+const SCOPES    = "https://www.googleapis.com/auth/calendar.events";
+const ADDED_KEY = "copa2026_added";
+
+let tokenClient      = null;
+let accessToken      = null;
+let gapiReady        = false;
+let pendingAction    = null; // { type: "single"|"all", matchIds: [...] }
+
+const addedSet = new Set(JSON.parse(localStorage.getItem(ADDED_KEY) || "[]"));
+
+function saveAdded() {
+  localStorage.setItem(ADDED_KEY, JSON.stringify([...addedSet]));
+}
+
+function initGapi() {
+  gapi.load("client", async () => {
+    await gapi.client.init({});
+    await gapi.client.load("https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest");
+    gapiReady = true;
+    if (accessToken) gapi.client.setToken({ access_token: accessToken });
+  });
+}
+
+function initGis() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { console.error(resp); return; }
+      accessToken = resp.access_token;
+      gapi.client.setToken({ access_token: accessToken });
+      if (pendingAction) {
+        const action = pendingAction;
+        pendingAction = null;
+        if (action.type === "single") await insertEvent(action.matchId);
+        else await insertAll(action.matchIds);
+      }
+    },
+  });
+}
+
+async function insertEvent(matchId) {
+  if (!gapiReady) { alert(t("errLoading")); return; }
+  const match = MATCHES.find(m => m.id === matchId);
+  if (!match) return;
+
+  const { start, end } = matchToISOInterval(match);
+  const btn = document.querySelector(`[data-match-id="${matchId}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = t("adding"); }
+
+  try {
+    await gapi.client.calendar.events.insert({
+      calendarId: "primary",
+      resource: {
+        summary:     `⚽ ${tName(match.home)} × ${tName(match.away)} — FIFA World Cup 2026`,
+        description: `FIFA World Cup 2026 · ${t("group")} ${match.group}`,
+        location:    match.venue,
+        start: { dateTime: start, timeZone: "America/Sao_Paulo" },
+        end:   { dateTime: end,   timeZone: "America/Sao_Paulo" },
+      },
+    });
+    addedSet.add(matchId);
+    saveAdded();
+    if (btn) { btn.textContent = t("added"); btn.classList.add("added"); btn.disabled = false; }
+    refreshAddAllBtn();
+  } catch (e) {
+    console.error(e);
+    if (btn) { btn.textContent = t("add"); btn.disabled = false; }
+    alert(t("errInsert"));
+  }
+}
+
+async function insertAll(matchIds) {
+  if (!gapiReady) { alert(t("errLoading")); return; }
+  const addAllBtn = document.getElementById("btnAddAll");
+  if (addAllBtn) { addAllBtn.disabled = true; addAllBtn.textContent = t("addingAll"); }
+
+  const toAdd = matchIds.filter(id => !addedSet.has(id));
+  for (const id of toAdd) {
+    await insertEvent(id);
+    await new Promise(r => setTimeout(r, 150)); // gentle rate-limit
+  }
+
+  if (addAllBtn) { addAllBtn.textContent = t("addedAll"); addAllBtn.classList.add("done"); addAllBtn.disabled = true; }
+}
+
+function refreshAddAllBtn() {
+  const btn = document.getElementById("btnAddAll");
+  if (!btn) return;
+  const ids = JSON.parse(btn.getAttribute("onclick").match(/\[.*\]/)[0]);
+  if (ids.every(id => addedSet.has(id))) {
+    btn.textContent = t("addedAll");
+    btn.classList.add("done");
+    btn.disabled = true;
+  }
+}
+
+function addToCalendar(matchId) {
+  if (!accessToken) {
+    pendingAction = { type: "single", matchId };
+    tokenClient.requestAccessToken({ prompt: "" });
+  } else {
+    insertEvent(matchId);
+  }
+}
+
+function addAllToCalendar(matchIds) {
+  if (!accessToken) {
+    pendingAction = { type: "all", matchIds };
+    tokenClient.requestAccessToken({ prompt: "" });
+  } else {
+    insertAll(matchIds);
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+rebuildGrid();
+
+window.addEventListener("load", () => {
+  if (typeof gapi !== "undefined") initGapi();
+  else document.querySelector('script[src*="api.js"]').addEventListener("load", initGapi);
+
+  if (typeof google !== "undefined" && google.accounts) initGis();
+  else document.querySelector('script[src*="gsi"]').addEventListener("load", initGis);
+});
+</script>
+</body>
+</html>
