@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Copa do Mundo 2026</title>
+  <!-- Google Analytics 4 — substitua G-XXXXXXXXXX pelo seu Measurement ID -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
   <style>
@@ -709,6 +718,7 @@ function selectTeam(team) {
   document.getElementById("btnBack").style.display = "";
   window.scrollTo({ top: 0, behavior: "smooth" });
   renderGames();
+  gtag("event", "select_team", { team_name: team, language: lang });
 }
 
 function goBack() {
@@ -847,6 +857,7 @@ async function insertEvent(matchId) {
     saveAdded();
     if (btn) { btn.textContent = t("added"); btn.classList.add("added"); btn.disabled = false; }
     refreshAddAllBtn();
+    gtag("event", "add_to_calendar", { match_id: matchId, home: match.home, away: match.away, group: match.group });
   } catch (e) {
     console.error(e);
     if (btn) { btn.textContent = t("add"); btn.disabled = false; }
