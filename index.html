@@ -123,9 +123,15 @@
     /* ── COUNTRY GRID ── */
     .country-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      grid-template-columns: repeat(7, 1fr);
       gap: 8px;
       margin-bottom: 36px;
+    }
+
+    @media (max-width: 700px) {
+      .country-grid { grid-template-columns: repeat(4, 1fr); }
+      /* 49 itens em 4 cols = 12 linhas + 1 órfão: centraliza */
+      .country-card:last-child:nth-child(4n + 1) { grid-column: 2 / 4; }
     }
 
     .country-card {
